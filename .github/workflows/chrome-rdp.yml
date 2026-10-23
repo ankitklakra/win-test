@@ -1,0 +1,35 @@
+name: Windows Chrome Remote Desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      crd_code:
+        description: 'Paste the Windows PowerShell command from remotedesktop.google.com/headless'
+        required: true
+      pin:
+        description: 'Enter a 6-digit PIN (e.g. 123456)'
+        required: true
+        default: '123456'
+
+jobs:
+  windows-rdp:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    steps:
+      - name: Download & Install Chrome Remote Desktop Host
+        run: |
+          Invoke-WebRequest -Uri "https://dl.google.com/edgedl/chrome-remote-desktop/chromeremotedesktophost.msi" -OutFile "crd.msi"
+          Start-Process msiexec.exe -ArgumentList "/i crd.msi /qn /norestart" -Wait
+
+      - name: Register Session with Google
+        run: |
+          $cmd = '${{ github.event.inputs.crd_code }}'
+          $fullCmd = "$cmd -pin=${{ github.event.inputs.pin }}"
+          Invoke-Expression $fullCmd
+
+      - name: Keep Windows Session Alive (60 Mins)
+        run: |
+          Write-Host "====================================================="
+          Write-Host "SUCCESS! Connect now at: https://remotedesktop.google.com/access"
+          Write-Host "====================================================="
+          Start-Sleep -Seconds 3500
